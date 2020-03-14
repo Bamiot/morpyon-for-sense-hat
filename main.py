@@ -1,16 +1,19 @@
 from sense_hat import SenseHat
 from time import sleep as wait
 from AI import morpyon
+#from morpyon.AI import morpyon
 
 sense = SenseHat()
 sense.clear()
 sense.low_light = True
 
+activate_ai = True
+
 red = [255, 0, 0]
 green = [0, 255, 0]
 blue = [0, 0, 255]
 yellow = [127, 127, 0]
-cyan = [0, 127, 127]
+cyan = [0, 137, 127]
 magenta = [127, 0, 127]
 
 white = [255, 255, 255]
@@ -18,8 +21,11 @@ low_white = [160, 140, 180]
 blank = [50, 50, 0]
 off = [0, 0, 0]
 
+global player
+
 
 def main():
+    global player
 
     grid = [[[50, 50, 0], [50, 50, 0], [50, 50, 0]],
             [[50, 50, 0], [50, 50, 0], [50, 50, 0]],
@@ -35,7 +41,7 @@ def main():
 
     player = 1
 
-    ai = morpyon(m_grid)
+    ai = morpyon(m_grid, activate_ai)
 
     def grid_to_grid():
         for i in range(3):
@@ -118,33 +124,50 @@ def main():
             colo = red
         elif pl == 0:
             print("egaliter")
-        for i in range(10):
+        for i in range(5):
             sense.clear(colo)
             wait(0.15)
             sense.clear()
             wait(0.15)
 
+    def turn(pl):
+        global player
+        if pl == 1:
+            player = 2
+        elif pl == 2:
+            player = 1
+
     def pushed_middle():
+
         if m_grid[selected[0]][selected[1]] == 0:
             m_grid[selected[0]][selected[1]] = player
             update_grid()
-            wait(0.3)
-            if is_win():
-                win(1)
-            elif not is_full():
-                xy = ai.play(m_grid)
-                m_grid[xy[0]][xy[1]] = 2
-                update_grid()
+
+            if ai.activated:
+                wait(0.3)
                 if is_win():
-                    win(2)
-            elif is_full():
-                win(0)
+                    win(1)
+                elif not is_full():
+                    xy = ai.play(m_grid)
+                    m_grid[xy[0]][xy[1]] = 2
+                    update_grid()
+                    if is_win():
+                        win(2)
+                elif is_full():
+                    win(0)
+            else:
+                if is_win():
+                    win(player)
+                elif is_full():
+                    win(0)
+                elif not is_full():
+                    turn(player)
 
     update_grid()
 
     while not is_win() and not is_full():
         for event in sense.stick.get_events():
-            #print("joystick was {} {}".format(event.action, event.direction))
+            # print("joystick was {} {}".format(event.action, event.direction))
             if event.direction == 'up' and event.action == 'pressed':
                 pushed_up()
             elif event.direction == 'down' and event.action == 'pressed':
@@ -165,12 +188,32 @@ def main():
                     update_grid()
 
 
+flash_max = 60
+flash = 0
+time = 0.015
+tempo = True
 while True:
-    sense.show_message("Morpyon", .1, [0, 255, 0], [50, 50, 50])
-    sense.clear(yellow)
-    wait(0.2)
-    sense.clear(cyan)
-    wait(0.2)
-    sense.clear(magenta)
-    wait(0.2)
+
+    while tempo:
+        flash = (flash + 1) % flash_max
+        wait(time)
+        if flash <= (flash_max * 1 / 6):
+            sense.clear(red)
+        elif flash <= (flash_max * 2 / 6):
+            sense.clear(yellow)
+        elif flash <= (flash_max * 3 / 6):
+            sense.clear(green)
+        elif flash <= (flash_max * 4 / 6):
+            sense.clear(cyan)
+        elif flash <= (flash_max * 5 / 6):
+            sense.clear(blue)
+        else:
+            sense.clear(cyan)
+
+        for event in sense.stick.get_events():
+            # print("joystick was {} {}".format(event.action, event.direction))
+            if event.direction == 'middle' and event.action == 'pressed':
+                tempo = False
+
+    sense.show_message("Morpyon", .06, [0, 255, 0], [50, 50, 50])
     main()

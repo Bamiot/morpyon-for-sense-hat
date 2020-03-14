@@ -2,8 +2,9 @@ from random import randint
 
 class morpyon:
 
-    def __init__(self,grid):
+    def __init__(self,grid,activated):
         self.grid = grid
+        self.activated = activated
 
     def play(self,grid):
         self.grid = grid
